@@ -1,5 +1,5 @@
 /**
- * This is an example of a basic node.js script that performs
+ * This is an app developed based off of a basic node.js script that performs
  * the Authorization Code oAuth2 flow to authenticate against
  * the Spotify Accounts.
  * 
@@ -12,6 +12,23 @@ var request = require('request'); // "Request" library
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
+
+var firebase = require('firebase/app');
+
+require("firebase/auth");
+require("firebase/database");
+
+var firebaseConfig = {
+    apiKey: "AIzaSyA3pJzomx74Ta9WsGKbQEjnCLV6QQvky_w",
+    authDomain: "cc2020-music.firebaseapp.com",
+    databaseURL: "https://cc2020-music.firebaseio.com",
+    projectId: "cc2020-music",
+    storageBucket: "cc2020-music.appspot.com",
+    messagingSenderId: "44903163873",
+    appId: "1:44903163873:web:bd6742325538fb269094a0"
+};
+
+firebase.initializeApp(firebaseConfig);
 
 var client_id = '7f051016830846079e5fdab0624ac11c'; // Your client id
 var client_secret = '918581585b9e499e8122e7c6a0793b58'; // Your secret
@@ -141,6 +158,63 @@ app.get('/refresh_token', function(req, res) {
       });
     }
   });
+});
+
+app.get('/add_song', function (songTitle, artistName) {
+  // A post entry
+  var postData = {
+      songTitle: songTitle,
+      artistName: artistName
+  };
+
+  // Get a key for a new Post
+  var newPostKey = firebase.database().ref().child('songReqs').push().key;
+
+  // Write the new post's data simultaneously in the posts list and the user's post list.
+  var updates = {};
+  updates['/songReqs/' + newPostKey] = postData;
+
+  return firebase.database().ref().update(updates);
+});
+
+var urlParam = function(){
+  var GET = {};
+  var query = process.location.search.substring(1).split("&");
+  for (var i = 0, max = query.length; i < max; i++)
+  {
+      if (query[i] === "") // check for trailing & with no param
+          continue;
+
+      var param = query[i].split("=");
+      GET[decodeURIComponent(param[0])] = decodeURIComponent(param[1] || "");
+  }
+  return GET;
+}
+
+app.get('/make_room', function (req, res) {
+  
+  var roomKey = '';
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var charactersLength = characters.length;
+  for (var i = 0; i < 4; i++) {
+    roomKey += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+
+  var hostID = req.query.hostID;
+  
+  var postData = {
+      queue: {},
+      hostID: hostID,
+      roomKey: roomKey
+  }
+
+  var newPostKey = firebase.database().ref().child('rooms').push().key;
+  var updates = {};
+  updates['/rooms/' + newPostKey] = postData;
+
+  firebase.database().ref().update(updates);
+
+  res.redirect("/room.html#?roomKey=" + roomKey);
 });
 
 console.log('Listening on 8888');

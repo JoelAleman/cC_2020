@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<!-- TODO: Make less jank please -->
+
+<h1>Here's Your Room Key</h1>
+
+<div id="keyDisplay">
+    
+</div>
+
+<script>
+    var url = window.location.href;
+    var name = url.substring(url.indexOf("=") + 1);
+
+    var parent = document.getElementById("keyDisplay");
+    var input = document.createElement("input");
+    input.value = name;
+    parent.appendChild(input);
+</script>
+
+</body>
+</html>
