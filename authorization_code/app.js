@@ -160,50 +160,82 @@ app.get('/refresh_token', function(req, res) {
   });
 });
 
-app.get('/add_song', function (songTitle, artistName) {
+app.get('/add_song', function (req, res) {
+
+  var songURI = req.query.songURI;
+  var roomKey = req.query.roomKey;
+
+  console.log('Adding songURI ' + songURI + ' to room ' + roomKey);
+
   // A post entry
   var postData = {
-      songTitle: songTitle,
-      artistName: artistName
+      songURI: songURI
   };
 
-  // Get a key for a new Post
-  var newPostKey = firebase.database().ref().child('songReqs').push().key;
+  // Get the identifier associated with the room that matches the 4-letter key
+  // add the songURi to that room's queue
+  var ref = firebase.database().ref('/rooms/');
+    ref.once('value', function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        var compareKey = childSnapshot.val()['roomKey'];
+        if(roomKey.localeCompare(compareKey) == 0)
+        {
+          // This is the room we need
+          var roomID = childSnapshot.key;
+          console.log('adding to roomID ' + roomID);
 
-  // Write the new post's data simultaneously in the posts list and the user's post list.
-  var updates = {};
-  updates['/songReqs/' + newPostKey] = postData;
+          var newPostKey = firebase.database().ref().child('rooms/' + roomID).push().key;
+          var updates = {};
+          updates['/rooms/' + roomID + '/queue/' + newPostKey] = postData;
+          firebase.database().ref().update(updates);
+        }
+      });
+    });
 
-  return firebase.database().ref().update(updates);
+  res.redirect("/room.html#?roomKey=" + roomKey);
 });
-
-var urlParam = function(){
-  var GET = {};
-  var query = process.location.search.substring(1).split("&");
-  for (var i = 0, max = query.length; i < max; i++)
-  {
-      if (query[i] === "") // check for trailing & with no param
-          continue;
-
-      var param = query[i].split("=");
-      GET[decodeURIComponent(param[0])] = decodeURIComponent(param[1] || "");
-  }
-  return GET;
-}
 
 app.get('/make_room', function (req, res) {
   
   var roomKey = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   var charactersLength = characters.length;
+
+  roomKey = '';
   for (var i = 0; i < 4; i++) {
     roomKey += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
 
+  // Guarantee the new room will have a unique room key
+  /**
+  var uniqueKeyFound = false;
+  while(!uniqueKeyFound)
+  {
+    roomKey = '';
+    for (var i = 0; i < 4; i++) {
+      roomKey += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+
+    var ref = firebase.database().ref('/rooms/');
+    uniqueKeyFound = true;
+    ref.once('value', function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        var compareKey = childSnapshot.val()['roomKey'];
+        console.log('Comparing against key: ' + compareKey);
+        if(roomKey.localeCompare(compareKey) == 0)
+        {
+          uniqueKeyFound = false;
+          console.log('Duplicate key found: ' + roomKey);
+        }
+      });
+    });
+  }
+  */
+
   var hostID = req.query.hostID;
   
   var postData = {
-      queue: {},
+      queue: null,
       hostID: hostID,
       roomKey: roomKey
   }
