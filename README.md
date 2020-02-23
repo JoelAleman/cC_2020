@@ -18,4 +18,5 @@ The song queue is hosted on a Firebase server. Hosts use the Web interface to cr
 
 The Spotify Web Playback API & SDK gave us access to modifying the Hosts current playback. The Site is utilized as a spotify connect device which streams the music directly.
 
-## How we can improve it
+### Team Members
+Joel Aleman, Austin Benoit, Caleb Warwick - Tier 2 Team
