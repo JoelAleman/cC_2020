@@ -12,6 +12,7 @@ var request = require('request'); // "Request" library
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
 var firebase = require('firebase/app');
 
@@ -195,6 +196,25 @@ app.get('/add_song', function (req, res) {
   res.redirect("/room.html#?roomKey=" + roomKey);
 });
 
+var HttpClient = function ()
+{
+  this.get = function(url, access_token, callback) {
+    var anHttpRequest = new XMLHttpRequest();
+    anHttpRequest.onreadystatechange = function() {
+      if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+      {
+        callback(anHttpRequest.responseText);
+      }
+    }
+
+    anHttpRequest.open("GET", url, true);
+    anHttpRequest.setRequestHeader('Accept', 'application/json');
+    anHttpRequest.setRequestHeader('Content-Type', 'application/json');
+    anHttpRequest.setRequestHeader('Authorization', 'Bearer ' + access_token);
+    anHttpRequest.send(null);
+  }
+}
+
 app.get('/make_room', function (req, res) {
   
   var roomKey = '';
@@ -205,6 +225,12 @@ app.get('/make_room', function (req, res) {
   for (var i = 0; i < 4; i++) {
     roomKey += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
+
+  var client = new HttpClient();
+  client.get('https://api.spotify.com/v1/search?q=Muse&type=track%2Cartist&market=US&limit=10&offset=5', req.query.access_token, function(response) {
+    var json = JSON.stringify(eval("(" + response + ")"));
+    console.log(json);
+  })
 
   // Guarantee the new room will have a unique room key
   /**
@@ -246,7 +272,9 @@ app.get('/make_room', function (req, res) {
 
   firebase.database().ref().update(updates);
 
-  res.redirect("/room.html#?roomKey=" + roomKey);
+  // the roomKey does not render on the page unless it is passed twice in this way.
+  // something about it freaks out with it is the first argument
+  res.redirect("/#?r=" + roomKey + "&access_token=" + req.query.access_token + "&refresh_token=" + req.query.hostID + "&roomKey=" + roomKey);
 });
 
 console.log('Listening on 8888');

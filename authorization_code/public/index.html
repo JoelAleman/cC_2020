@@ -27,12 +27,16 @@
         </div>
         <div id="oauth">
         </div>
-        <button class="btn btn-default" id="obtain-new-token">Obtain new token using the refresh token</button>
+        <!-- <div id="roomInfo">
+        </div> -->
+        <!-- <button class="btn btn-default" id="obtain-new-token">Obtain new token using the refresh token</button> -->
       </div>
     </div>
 
     <script id="user-profile-template" type="text/x-handlebars-template">
       <h1>Logged in as {{display_name}}</h1>
+
+      <!--
       <div class="media">
         <div class="pull-left">
           <img class="media-object" width="150" src="{{images.0.url}}" />
@@ -49,6 +53,7 @@
           </dl>
         </div>
       </div>
+      -->
     </script>
 
     <script id="oauth-template" type="text/x-handlebars-template">
@@ -56,15 +61,23 @@
       <dl class="dl-horizontal">
         <dt>Access token</dt><dd class="text-overflow">{{access_token}}</dd>
         <dt>Refresh token</dt><dd class="text-overflow">{{refresh_token}}</dd>
+        <dt>Room Key</dt><dd class="text-overflow">{{roomKey}}</dd>
       </dl>
-      <a href="/make_room?hostID={{access_token}}" class="btn btn-primary">Make Room</a>
+      <a href="/make_room?hostID={{refresh_token}}&access_token={{access_token}}" class="btn btn-primary">Make Room</a>
     </script>
+
+    <!-- <script id="roomInfo-template" type="text/x-handlebars-template">
+      <h2>Room Info</h2>
+      <dl class="dl-horizontal">
+        <dt>Room Key</dt><dd class="text-overflow">{{roomKey}}</dd>
+      </dl>
+    </script> -->
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
     <script>
       (function() {
-
+        console.log("function called");
         /**
          * Obtains parameters from the hash of the URL
          * @return Object
@@ -76,6 +89,7 @@
           while ( e = r.exec(q)) {
              hashParams[e[1]] = decodeURIComponent(e[2]);
           }
+          console.log(hashParams);
           return hashParams;
         }
 
@@ -87,20 +101,30 @@
             oauthTemplate = Handlebars.compile(oauthSource),
             oauthPlaceholder = document.getElementById('oauth');
 
+        /** var roomInfoSource = document.getElementById('roomInfo-template').innerHTML,
+            roomInfoTemplate = Handlebars.compile(roomInfoSource),
+            roomInfoPlaceholder = document.getElementById('roomInfo'); */
+
         var params = getHashParams();
 
         var access_token = params.access_token,
             refresh_token = params.refresh_token,
             error = params.error;
 
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        var roomKey = params.roomKey;
+
         if (error) {
           alert('There was an error during the authentication');
         } else {
           if (access_token) {
+            console.log("access_token is present");
             // render oauth info
             oauthPlaceholder.innerHTML = oauthTemplate({
               access_token: access_token,
-              refresh_token: refresh_token
+              refresh_token: refresh_token,
+              roomKey: roomKey
             });
 
             $.ajax({
@@ -111,16 +135,24 @@
                 success: function(response) {
                   userProfilePlaceholder.innerHTML = userProfileTemplate(response);
 
+                  /**if(roomKey) {
+                    roomInfoPlaceholder.innerHTML = roomInfoTemplate({
+                      roomKey: roomKey
+                    });
+                  } */
+
                   $('#login').hide();
                   $('#loggedin').show();
                 }
             });
           } else {
               // render initial screen
+              console.log("access_token not present");
               $('#login').show();
               $('#loggedin').hide();
           }
 
+          /**
           document.getElementById('obtain-new-token').addEventListener('click', function() {
             $.ajax({
               url: '/refresh_token',
@@ -131,10 +163,12 @@
               access_token = data.access_token;
               oauthPlaceholder.innerHTML = oauthTemplate({
                 access_token: access_token,
-                refresh_token: refresh_token
+                refresh_token: refresh_token,
+                roomKey: roomKey
               });
             });
           }, false);
+          */
         }
       })();
     </script>
