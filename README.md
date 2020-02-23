@@ -1,37 +1,21 @@
-## Welcome to GitHub Pages
+## Q'd Up, Music Co-streaming App
 
-You can use the [editor on GitHub](https://github.com/JoelAleman/cC_2020/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+Q'd Up is a Web-app that creates a room in Google firebase where you and your friends can upload songs to a spotify queue hosted on a main phone.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## How it Works
 
-### Markdown
+Q'd up is hosted on a Firebase Web-app accessed by the 'Host' who creates a 'Room' which generates a 4 Letter code which 'Guests' connect to and add songs to the Firebase queue.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### OAuth2
 
-```markdown
-Syntax highlighted code block
+To utilize the Spotify API, we required an Authentication Token from the Host's Spotify account. We used a node.js server to do this complete the Authentication.
 
-# Header 1
-## Header 2
-### Header 3
+### Firebase Server
 
-- Bulleted
-- List
+The song queue is hosted on a Firebase server. Hosts use the Web interface to create a Room. The Room contains the Hosts Access Token all songs that are added to the queue by Guests. Songs are stored using their Spotify URI.
 
-1. Numbered
-2. List
+### Spotify Web Playback API & SDK
 
-**Bold** and _Italic_ and `Code` text
+The Spotify Web Playback API & SDK gave us access to modifying the Hosts current playback. The Site is utilized as a spotify connect device which streams the music directly.
 
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/JoelAleman/cC_2020/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+## How we can improve it
