@@ -8,6 +8,7 @@
  */
 
 var express = require('express'); // Express web server framework
+var bodyParser = require('body-parser');
 var request = require('request'); // "Request" library
 var cors = require('cors');
 var querystring = require('querystring');
@@ -58,6 +59,8 @@ app.use(express.static(__dirname + '/public'))
    .use(cors())
    .use(cookieParser());
 
+app.use(bodyParser.urlencoded({extended: true}));
+
 app.get('/login', function(req, res) {
 
   var state = generateRandomString(16);
@@ -74,6 +77,50 @@ app.get('/login', function(req, res) {
       state: state
     }));
 });
+
+app.post('/join_room', function(req, res) {
+  var roomKey = req.body.RoomKey;
+
+  var ref = firebase.database().ref('/rooms/');
+    ref.once('value', function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        var compareKey = childSnapshot.val()['roomKey'];
+        if(roomKey.localeCompare(compareKey) == 0)
+        {
+          // This is the room we need
+          res.redirect('/#roomKey='+roomKey);
+        }
+      });
+    });
+});
+
+function createRoom(access_token, callback)
+{
+  var roomKey = '';
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var charactersLength = characters.length;
+
+  roomKey = '';
+  for (var i = 0; i < 4; i++) {
+    roomKey += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+
+  var hostID = access_token;
+  
+  var postData = {
+      queue: null,
+      hostID: hostID,
+      roomKey: roomKey
+  }
+
+  var newPostKey = firebase.database().ref().child('rooms').push().key;
+  var updates = {};
+  updates['/rooms/' + newPostKey] = postData;
+
+  firebase.database().ref().update(updates);
+
+  callback(roomKey);
+}
 
 app.get('/callback', function(req, res) {
 
@@ -121,12 +168,17 @@ app.get('/callback', function(req, res) {
           console.log(body);
         });
 
-        // we can also pass the token to the browser to make requests from there
-        res.redirect('/#' +
+        createRoom(access_token, function(roomKey) {
+          // we can also pass the token to the browser to make requests from there
+          res.redirect('/#' +
           querystring.stringify({
             access_token: access_token,
-            refresh_token: refresh_token
+            refresh_token: refresh_token,
+            roomKey: roomKey
           }));
+        })
+
+        
       } else {
         res.redirect('/#' +
           querystring.stringify({
@@ -166,6 +218,8 @@ app.get('/add_song', function (req, res) {
   var songURI = req.query.songURI;
   var roomKey = req.query.roomKey;
 
+  var access_token = req.query.access_token;
+
   console.log('Adding songURI ' + songURI + ' to room ' + roomKey);
 
   // A post entry
@@ -192,18 +246,60 @@ app.get('/add_song', function (req, res) {
         }
       });
     });
-
-  res.redirect("/room.html#?roomKey=" + roomKey);
+  if(access_token)
+  {
+    res.redirect("/#roomKey=" + roomKey + "&access_token=" + access_token);
+  }
+  else
+  {
+    res.redirect("/#roomKey=" + roomKey);
+  }
 });
+
+function addSong(songURI, roomKey, callback)
+{
+  console.log('Adding songURI ' + songURI + ' to room ' + roomKey);
+
+  var postData = {
+      songURI: songURI
+  };
+
+  // Get the identifier associated with the room that matches the 4-letter key
+  // add the songURi to that room's queue
+  var ref = firebase.database().ref('/rooms/');
+    ref.once('value', function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        var compareKey = childSnapshot.val()['roomKey'];
+        if(roomKey.localeCompare(compareKey) == 0)
+        {
+          // This is the room we need
+          var roomID = childSnapshot.key;
+          console.log('adding to roomID ' + roomID);
+
+          var newPostKey = firebase.database().ref().child('rooms/' + roomID).push().key;
+          var updates = {};
+          updates['/rooms/' + roomID + '/queue/' + newPostKey] = postData;
+          firebase.database().ref().update(updates);
+          callback("newPostKey"); // Now a string literal as a bandage
+        }
+      });
+    });
+}
 
 var HttpClient = function ()
 {
   this.get = function(url, access_token, callback) {
+    console.log("GET request: " + url);
+    console.log("access token: " + access_token);
     var anHttpRequest = new XMLHttpRequest();
     anHttpRequest.onreadystatechange = function() {
       if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
       {
         callback(anHttpRequest.responseText);
+      }
+      else
+      {
+        console.log("error with GET request");
       }
     }
 
@@ -226,13 +322,8 @@ app.get('/make_room', function (req, res) {
     roomKey += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
 
-  var client = new HttpClient();
-  client.get('https://api.spotify.com/v1/search?q=Muse&type=track%2Cartist&market=US&limit=10&offset=5', req.query.access_token, function(response) {
-    var json = JSON.stringify(eval("(" + response + ")"));
-    console.log(json);
-  })
-
   // Guarantee the new room will have a unique room key
+  // Fails because of sync issues
   /**
   var uniqueKeyFound = false;
   while(!uniqueKeyFound)
@@ -274,7 +365,51 @@ app.get('/make_room', function (req, res) {
 
   // the roomKey does not render on the page unless it is passed twice in this way.
   // something about it freaks out with it is the first argument
-  res.redirect("/#?r=" + roomKey + "&access_token=" + req.query.access_token + "&refresh_token=" + req.query.hostID + "&roomKey=" + roomKey);
+  res.redirect("/#access_token=" + hostID + "&roomKey=" + roomKey);
+});
+
+// For now, this function automatically adds the top search result
+// to the queue, and doesn't present a menu for selection.
+app.post('/search', function(req, res) {
+  var searchTerm = req.body.searchTerm;
+  var type = "track";
+  var market = "US";
+  var limit = "5";
+  var offset = "0";
+  searchTerm.split(" ").join("%%20");
+  searchTerm.split("&").join("%%26");
+  searchTerm.split(",").join("%%2");
+
+  searchTerm = searchTerm.replace(/ /g, "%20");
+  searchTerm = searchTerm.replace(/&/g, "%26");
+  searchTerm = searchTerm.replace(/,/g, "%2");
+
+  var url = "https://api.spotify.com/v1/search?q="+searchTerm+"&type="+type+"&market="+market+"&limit="+limit+"&offset="+offset;
+
+  var roomKey = req.query.roomKey;
+
+  // get the access token of the room given the roomKey
+  var ref = firebase.database().ref('/rooms/');
+  ref.once('value', function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
+      var compareKey = childSnapshot.val()['roomKey'];
+      if(roomKey.localeCompare(compareKey) == 0)
+      {
+        var access_token = childSnapshot.val()['hostID'];
+        var client = new HttpClient();
+        client.get(url, access_token, function(response) {
+          var json = JSON.stringify(eval("(" + response + ")"));
+          console.log(json);
+          var track = json[0][1]['uri'];
+          addSong(track, roomKey, function(songRef) {
+            // could do something with the reference to the song if desired
+          });
+          // app.set('json spaces', 4);
+          // res.json(response);
+        });
+      }
+    });
+  });
 });
 
 console.log('Listening on 8888');
