@@ -38,7 +38,7 @@ var client_id = 'NONE'; // Your client id
 var client_secret = 'NONE'; // Your secret
 var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
-fs.readFile('../API_KEYS.json', function (err, data) {
+fs.readFile('API_KEYS.json', function (err, data) {
   if (err) throw err
   var obj = JSON.parse(data);
   client_id = obj.spotify.client_id;
