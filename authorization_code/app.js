@@ -15,6 +15,7 @@ var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+var fs = require('fs');
 
 var firebase = require('firebase/app');
 
@@ -33,9 +34,16 @@ var firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-var client_id = '7f051016830846079e5fdab0624ac11c'; // Your client id
-var client_secret = '918581585b9e499e8122e7c6a0793b58'; // Your secret
+var client_id = 'NONE'; // Your client id
+var client_secret = 'NONE'; // Your secret
 var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
+
+fs.readFile('../API_KEYS.json', function (err, data) {
+  if (err) throw err
+  var obj = JSON.parse(data);
+  client_id = obj.spotify.client_id;
+  client_secret = obj.spotify.client_secret;
+});
 
 /**
  * Generates a random string containing numbers and letters
