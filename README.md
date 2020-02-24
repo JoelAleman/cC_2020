@@ -1,4 +1,4 @@
-## Q'd Up, Music Co-streaming App
+# Q'd Up, Music Co-streaming App
 
 Q'd Up is a Web-app that creates a room in Google firebase where you and your friends can upload songs to a spotify queue hosted on a main phone.
 
