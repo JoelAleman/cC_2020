@@ -407,14 +407,14 @@ app.post('/search', function(req, res) {
         var access_token = childSnapshot.val()['hostID'];
         var client = new HttpClient();
         client.get(url, access_token, function(response) {
-          var json = JSON.stringify(eval("(" + response + ")"));
+          var json = JSON.parse(response);
           console.log(json);
-          var track = json[0][1]['uri'];
+          var track = json.tracks.items[0].uri;
           addSong(track, roomKey, function(songRef) {
             // could do something with the reference to the song if desired
           });
           // app.set('json spaces', 4);
-          // res.json(response);
+          res.redirect('/#');
         });
       }
     });
