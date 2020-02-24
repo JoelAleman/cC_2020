@@ -9,7 +9,7 @@
  */
 
 var express = require('express'); // Express web server framework
-var bodyParser = require('body-parser');
+var bodyParser = require('body-parser'); // used in responding to forms
 var request = require('request'); // "Request" library
 var cors = require('cors');
 var querystring = require('querystring');
@@ -22,27 +22,19 @@ var firebase = require('firebase/app');
 require("firebase/auth");
 require("firebase/database");
 
-var firebaseConfig = {
-    apiKey: "AIzaSyA3pJzomx74Ta9WsGKbQEjnCLV6QQvky_w",
-    authDomain: "cc2020-music.firebaseapp.com",
-    databaseURL: "https://cc2020-music.firebaseio.com",
-    projectId: "cc2020-music",
-    storageBucket: "cc2020-music.appspot.com",
-    messagingSenderId: "44903163873",
-    appId: "1:44903163873:web:bd6742325538fb269094a0"
-};
-
-firebase.initializeApp(firebaseConfig);
-
 var client_id = 'NONE'; // Your client id
 var client_secret = 'NONE'; // Your secret
 var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
+// Initialize the Firebase app
 fs.readFile('API_KEYS.json', function (err, data) {
   if (err) throw err
   var obj = JSON.parse(data);
+
   client_id = obj.spotify.client_id;
   client_secret = obj.spotify.client_secret;
+
+  firebase.initializeApp(obj.firebase);
 });
 
 /**
