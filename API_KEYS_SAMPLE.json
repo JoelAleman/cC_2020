@@ -1,0 +1,15 @@
+{
+    "spotify": {
+        "client_id": "YOUR_CLIENT_ID",
+        "client_secret": "YOUR_CLIENT_SECRET"
+    },
+    "firebase": {
+        "apiKey": "YOUR_API_KEY",
+        "authDomain": "EXAMPLE.firebaseapp.com",
+        "databaseURL": "https://EXAMPLE.firebaseio.com",
+        "projectId": "EXAMPLE",
+        "storageBucket": "EXAMPLE.appspot.com",
+        "messagingSenderId": "YOUR_MESSAGING_SENDER_ID",
+        "appId": "YOUR_APP_ID"
+    }
+}
