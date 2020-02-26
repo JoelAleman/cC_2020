@@ -1,11 +1,7 @@
 
 /**
- * This is an app developed based off of a basic node.js script that performs
- * the Authorization Code oAuth2 flow to authenticate against
- * the Spotify Accounts.
- * 
- * For more information, read
- * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
+ * @author Austin Benoit
+ * @description This is the main file to be run by a server for Q'd Up to be accessible through the browser.
  */
 
 var express = require('express'); // Express web server framework
@@ -26,7 +22,9 @@ var client_id = 'NONE'; // Your client id
 var client_secret = 'NONE'; // Your secret
 var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
-// Initialize the Firebase app
+/**
+ * Initilaize the Firebase app
+ */
 fs.readFile('API_KEYS.json', function (err, data) {
   if (err) throw err
   var obj = JSON.parse(data);
@@ -67,7 +65,7 @@ app.get('/login', function(req, res) {
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
 
-  // your application requests authorization
+  // the application requests authorization
   var scope = 'user-read-private user-read-email';
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
